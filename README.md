@@ -11,3 +11,4 @@ There are options to encrypt or decrypt one chunck at a time for large files whi
 
 Otherwise a simpler, encrypt all at once version is in aes-simple.html
 
+The small demos included here can also be found live at https://flin.org/aescrypt.js/
