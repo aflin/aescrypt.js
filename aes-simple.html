@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html><head><title>test</title>
+<meta charset="utf-8">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script src="/js/jquery.filereader.js" type="text/javascript"></script>
+<script src="/js/forge.bundle.js" type="text/javascript"></script>
+<script src="/js/aescrypt-ww.js" type="text/javascript"></script>
+<script type="text/javascript">
+$( function () {
+
+$("#filedec").fileread( function(opts) {
+	var aesworker=new AesWorker();
+	var input=opts.fileData.data;
+	var pass1=$("#pass1").val();
+	console.log(input);
+	aesworker.decrypt(input,pass1,function(e,dec) {
+		var du=makeurl(dec.data);
+		if (dec.error!="") $("#log").append("Error: " + dec.error+"<br>");
+		else {
+			$("#a4").attr('href',du).attr('download',opts.fileData.file.name.replace(/\.aes$/,''));
+			$("#a4").text(opts.fileData.file.name.replace(/\.aes$/,'')).show();	
+			$("#log").append("done.<br>");
+		}
+	});
+}).click(function (e) {
+	var pass1=$("#pass1").val();
+	var pass2=$("#pass1").val();
+	if (pass1 != pass2 || pass1=="") {
+		alert ("passwords don't match or is empty");
+		$("#pass1").focus();
+		return false;
+	}
+});
+
+
+$("#fileenc").fileread( function(opts) {
+	$("#log").append("starting encrypt...<br>");
+	var pass1=$("#pass1").val();
+	var pass2=$("#pass1").val();
+	var ret=[];
+
+	var input=opts.fileData.data;
+	var loop=0;
+	
+	var aesworker= new AesWorker();
+
+	aesworker.encrypt(input,pass1,function(e,enc) {
+		var du=makeurl(enc.data);
+		if (enc.error!="") $("#log").append("Error: " + enc.error+"<br>");
+		else {
+			$("#a3").attr('href',du).attr('download',opts.fileData.file.name+'.aes');
+			$("#a3").text(opts.fileData.file.name+'.aes').show();
+			$("#log").append("done.<br>");
+		}
+	});
+	
+	$("#fileenc").replaceWith($("#fileenc").val('').clone(true));
+}).click(function (e) {
+	var pass1=$("#pass1").val();
+	var pass2=$("#pass1").val();
+	if (pass1 != pass2 || pass1=="") {
+		alert ("passwords don't match or is empty");
+		$("#pass1").focus();
+		return false;
+	}
+});
+
+
+});
+
+</script>
+</head>
+<body>
+<h2>encrypt (aescrypt) files*</h2>
+<small>*no files uploaded to server, everything done in browser</small>
+<br>
+<br>
+<hr>
+<h3>Encrypt and Decrypt</h3>
+<br>Password for file<input type="password" id="pass1" value="somepass">
+<br>Confirm Password <input type="password" id="pass2" value="somepass">
+<h4>Encrypt a File</h4>
+<input type="file" id="fileenc" name="fileenc[]">
+<h4>Decrypt a file:</h4>
+<input type="file" id="filedec" name="filedec[]">
+<h3>File Links:</h3>
+<a style="display:none" id="a3" download="demo.aes"></a>
+<br>
+<a style="display:none" id="a4" download="demo-decrypted.tar"></a>
+<br>
+<hr>
+<h3>Log</h3>
+<div id="log"></div>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html><head><title>test</title>
+<meta charset="utf-8">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script src="/js/jquery.filereader.js" type="text/javascript"></script>
+<script src="/js/forge.bundle.js" type="text/javascript"></script>
+<script src="/js/aescrypt.js" type="text/javascript"></script>
+<script src="/js/aescrypt-ww.js" type="text/javascript"></script>
+<script type="text/javascript">
+$( function () {
+
+var chunker,ret=[];
+
+/* this function is used as a callback for both encrypting and decrypting 
+ * which one it is doing depends on whether the worker was first called with
+ * chunkDecrypt or chunkEncrypt
+*/
+
+if (crypto&&crypto.subtle) {
+	$("#log").append("Browser has webcrypto library. Using forge.js sparingly.<br>");
+} else {
+	var protocol = (""+window.location).indexOf("https://")==0?"https":"http";
+	$("#log").append(protocol + " Browser does not have webcrypto library. Using forge.js for all decrypting.<br>");
+	if (protocol=='http') 
+		$("#log").append("Lack of support may be because browser refuses access to webcrypto when not using https (makes no sense to me, seems like this is when you would need it the most).<br>");
+}
+
+function updatechunk (e,d){
+	if (d.error!="") {
+		$("#log").append("Error: " + d.error+"<br>");
+		chunker.terminate();
+	}
+
+	if(d.data) {
+		ret[d.chunkindex]=d.data;
+	}
+
+	/* d.func='finish' is set when we call chunker.finish() below in endcrypt()
+	   here we terminate after getting last block 
+	*/
+	if (d.func=='finish') {
+		var output=chunker.joinarrays(ret);
+		/* makeurl is in jquery-filereader.js */
+		var du=makeurl(output);
+		var file=chunker.fobj.fileData.file;
+
+		if (d.error!="") $("#log").append("Error: " + d.error+"<br>");
+		else {
+			var fname;
+			if (file.name.match(/\.aes$/) )
+				fname=file.name.replace(/\.aes$/,'');
+			else
+				fname=file.name + '.aes';
+				
+			$("#filed").append('<a href="'+du+'" download="'+fname+'">'+fname+'</a><br>');
+
+			$("#log").append("done.<br>");
+		}
+		chunker.terminate();			
+	}
+}
+
+function procChunk(fobj) {
+	var input=fobj.dataChunks ? fobj.dataChunks[fobj.currentDataChunk] : fobj.fileData.data;
+
+	chunker.update(input,input.length);
+	//empty the dataslot so filereader can get next chunk
+	fobj.dataChunks[fobj.currentDataChunk]=null;
+}
+
+function endcrypt (fobj) {
+	chunker.fobj=fobj; // attach so we can find it above in updatechunk
+	chunker.finish();
+}
+
+/* Read and decrypt a file in aescrypt format */
+
+$("#filedec").fileread( {
+  chunk: 4096,
+  onStart: function(fobj) {
+	var pass1=$("#pass1").val();
+	$("#log").append("starting decrypt of "+fobj.file.name+"<br>chunk: ");
+
+	ret=[];
+	chunker=new AesWorker();
+
+	chunker.chunkDecrypt(pass1,updatechunk);
+  },
+
+  /* this is called for every 4096 byte block of data retrieved from
+   * filereader */
+  onFileLoad: procChunk,
+
+  /* this is called after the last onFileLoad corresponding to the final block/chunk in file*/
+  onFinalChunk: endcrypt,
+
+}).click(function (e) {
+	var pass1=$("#pass1").val();
+	var pass2=$("#pass1").val();
+	if (pass1 != pass2 || pass1=="") {
+		alert ("passwords don't match or are empty");
+		$("#pass1").focus();
+		return false;
+	}
+});
+
+/* Read and encrypt a file to aescrypt format */
+
+$("#fileenc").fileread({ 
+  chunk: 4096,
+  onStart: function(fobj) {
+	var pass1=$("#pass1").val();
+	var pass2=$("#pass1").val();
+	ret=[];
+
+	$("#log").append("starting encrypt of "+fobj.file.name+"<br>");
+
+	chunker=new AesWorker();
+
+	chunker.chunkEncrypt(pass1,updatechunk);
+
+  },
+  onFileLoad: procChunk,
+
+  onFinalChunk: endcrypt
+
+}).click(function (e) {
+	var pass1=$("#pass1").val();
+	var pass2=$("#pass1").val();
+	if (pass1 != pass2 || pass1=="") {
+		alert ("passwords don't match or is empty");
+		$("#pass1").focus();
+		return false;
+	}
+});
+
+
+});
+
+</script>
+</head>
+<body>
+<h2>encrypt (aescrypt) files*</h2>
+<small>*no files uploaded to server, everything done in browser</small>
+<br>
+<br>
+<hr>
+<h3>Encrypt and Decrypt</h3>
+<br>Password for file<input type="password" id="pass1" value="somepass">
+<br>Confirm Password <input type="password" id="pass2" value="somepass">
+<h4>Encrypt a File</h4>
+<input type="file" id="fileenc" name="fileenc[]">
+<h4>Decrypt a file:</h4>
+<input type="file" id="filedec" name="filedec[]">
+<h3>File Links:</h3>
+<div id=filed></div>
+<br>
+<hr>
+<h3>Log</h3>
+<div id="log"></div>
+</body>
+</html>
