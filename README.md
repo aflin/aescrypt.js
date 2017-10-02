@@ -1,9 +1,9 @@
 # aescrypt.js
-Encryption and decryption of files in aescrypt 0.2 format in pure javascript
+Encryption and decryption of files in aescrypt version 2 format in pure javascript
 
 More about aescrypt can be found here: https://www.aescrypt.com/
 
-The library can be used with or without web-workers.  THe web-worker version is recommended since the regular version is run in the main thread and can severely slow down the browser.
+The library can be used with or without web-workers.  The web-worker version is recommended since the regular version is run in the main thread and can severely slow down the browser.
 
 See the js/aescrypt-ww.js file for usage examples.
 
