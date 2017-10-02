@@ -11,11 +11,6 @@ $( function () {
 
 var chunker,ret=[];
 
-/* this function is used as a callback for both encrypting and decrypting 
- * which one it is doing depends on whether the worker was first called with
- * chunkDecrypt or chunkEncrypt
-*/
-
 if (crypto&&crypto.subtle) {
 	$("#log").append("Browser has webcrypto library. Using forge.js sparingly.<br>");
 } else {
@@ -24,6 +19,11 @@ if (crypto&&crypto.subtle) {
 	if (protocol=='http') 
 		$("#log").append("Lack of support may be because browser refuses access to webcrypto when not using https (makes no sense to me, seems like this is when you would need it the most).<br>");
 }
+	
+/* this function is used as a callback for both encrypting and decrypting 
+ * which one it is doing depends on whether the worker was first called with
+ * chunkDecrypt or chunkEncrypt
+*/
 
 function updatechunk (e,d){
 	if (d.error!="") {
